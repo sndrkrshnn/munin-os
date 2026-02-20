@@ -16,7 +16,8 @@ sudo apt install -y build-essential git bc bison flex libssl-dev libelf-dev \
   debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools \
   rsync cpio dosfstools qemu-system-x86
 
-ARCH=arm64 make bins      # builds munin-core, munin-sts, munin-ui
+ARCH=arm64 make bins      # builds munin-core, munin-sts, munin-ui, munin-brain, munin-audio
+TIER=Tier1Mobile make models   # download only selected preset model
 ARCH=arm64 make rootfs
 ARCH=arm64 make validate  # verifies binaries/units/assets inside rootfs
 ARCH=arm64 make iso
@@ -66,6 +67,15 @@ Wrappers:
 - Tier3 (performance): `munin-performance-13b-instruct-q5.gguf`
 
 Expected model directory: `/opt/muninos/models/`
+
+Download only the model you need:
+```bash
+# explicit tier
+TIER=Tier1Mobile bash distro/scripts/model-manager.sh
+
+# or auto-select tier from host profile
+TIER=auto bash distro/scripts/model-manager.sh
+```
 
 ## Learning docs
 - `docs/OS_BASICS.md`

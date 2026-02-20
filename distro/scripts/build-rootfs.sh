@@ -95,6 +95,12 @@ if [[ -d "$ROOT/build/munin-bin" ]]; then
   $SUDO rsync -a "$ROOT/build/munin-bin/" "$WORK/opt/muninos/bin/"
 fi
 
+# ship selected local model(s) only when available
+if [[ -d "$ROOT/build/models" ]]; then
+  $SUDO mkdir -p "$WORK/opt/muninos/models"
+  $SUDO rsync -a "$ROOT/build/models/" "$WORK/opt/muninos/models/"
+fi
+
 # ensure executable scripts
 $SUDO chmod +x \
   "$WORK/usr/local/bin/munin-firstboot" \

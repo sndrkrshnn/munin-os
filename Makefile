@@ -1,11 +1,14 @@
 SHELL := /bin/bash
 
-.PHONY: all bins kernel rootfs validate iso qemu smoke ci ci-smoke clean
+.PHONY: all bins models kernel rootfs validate iso qemu smoke ci ci-smoke clean
 
 all: bins rootfs validate iso
 
 bins:
 	bash distro/scripts/build-munin-binaries.sh
+
+models:
+	bash distro/scripts/model-manager.sh
 
 kernel:
 	bash distro/scripts/build-kernel.sh

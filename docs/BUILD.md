@@ -11,6 +11,7 @@ sudo apt install -y build-essential git bc bison flex libssl-dev libelf-dev \
 ## Build flow (Apple Silicon)
 ```bash
 ARCH=arm64 make bins
+TIER=Tier1Mobile make models
 ARCH=arm64 make rootfs
 ARCH=arm64 make validate
 ARCH=arm64 make iso
@@ -40,6 +41,8 @@ make ci-smoke
 - `munin-ui` (from `munin-ui-service`)
 
 and stages them into `build/munin-bin/` for rootfs embedding.
+
+`make models` downloads only one model preset (selected by `TIER`) into `build/models/`.
 
 Artifacts:
 - `build/live/vmlinuz`
