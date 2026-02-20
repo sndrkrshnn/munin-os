@@ -50,5 +50,14 @@ Wrappers:
 - `/usr/local/bin/munin-ui`
 - `/usr/local/bin/munin-firstboot-wizard`
 
+## Agentic runtime (current)
+- `munin-core` now includes a tool router + policy engine + agent REPL
+- supports tool-call flow for system/file/shell/network actions
+- risky actions are marked for confirmation unless `--auto-approve` is used
+
+## Learning docs
+- `docs/OS_BASICS.md`
+- `docs/AGENTIC_ARCHITECTURE.md`
+
 ## Status
 Boot-first distro bring-up is in place, and build pipeline now supports compiling + embedding Munin binaries into `/opt/muninos/bin` during image creation.
