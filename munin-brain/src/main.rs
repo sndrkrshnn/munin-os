@@ -55,6 +55,9 @@ struct RuntimeProfile {
     tier: ModelTier,
     backend: String,
     selected_model: ModelPreset,
+    resolved_tier: ModelTier,
+    model_available: bool,
+    warning: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -104,6 +107,46 @@ fn preset_for_tier(tier: &ModelTier) -> ModelPreset {
     }
 }
 
+fn tier_rank(t: &ModelTier) -> u8 {
+    match t {
+        ModelTier::Tier0Tiny => 0,
+        ModelTier::Tier1Mobile => 1,
+        ModelTier::Tier2Balanced => 2,
+        ModelTier::Tier3Performance => 3,
+    }
+}
+
+fn tier_from_rank(r: u8) -> ModelTier {
+    match r {
+        0 => ModelTier::Tier0Tiny,
+        1 => ModelTier::Tier1Mobile,
+        2 => ModelTier::Tier2Balanced,
+        _ => ModelTier::Tier3Performance,
+    }
+}
+
+fn resolve_model_with_fallback(target_tier: &ModelTier) -> (ModelPreset, ModelTier, bool, Option<String>) {
+    let mut r = tier_rank(target_tier);
+    loop {
+        let tier = tier_from_rank(r);
+        let preset = preset_for_tier(&tier);
+        if std::path::Path::new(&preset.model_path).exists() {
+            let warning = if r != tier_rank(target_tier) {
+                Some(format!("requested {:?} unavailable; fell back to {:?}", target_tier, tier))
+            } else {
+                None
+            };
+            return (preset, tier, true, warning);
+        }
+        if r == 0 {
+            let mut p = preset_for_tier(&tier);
+            let w = Some(format!("no model file found for any tier under /opt/muninos/models; expected one of preset paths"));
+            return (p, tier, false, w);
+        }
+        r -= 1;
+    }
+}
+
 fn detect_profile() -> RuntimeProfile {
     let mut sys = System::new_all();
     sys.refresh_all();
@@ -123,13 +166,18 @@ fn detect_profile() -> RuntimeProfile {
         ModelTier::Tier3Performance
     };
 
+    let (selected_model, resolved_tier, model_available, warning) = resolve_model_with_fallback(&tier);
+
     RuntimeProfile {
         arch,
         cpus,
         ram_gb,
         gpu_hint,
-        selected_model: preset_for_tier(&tier),
+        selected_model,
         tier,
+        resolved_tier,
+        model_available,
+        warning,
         backend: "llama.cpp".into(),
     }
 }
@@ -240,7 +288,14 @@ async fn main() -> Result<()> {
         Commands::Profile => println!("{}", serde_json::to_string_pretty(&detect_profile())?),
         Commands::Decide { transcript } => println!("{}", serde_json::to_string_pretty(&decide(&transcript))?),
         Commands::Serve { listen } => {
-            tracing::info!("profile={:?}", detect_profile());
+            let profile = detect_profile();
+            if !profile.model_available {
+                tracing::warn!("No local model available. Install one with: TIER=Tier1Mobile make models");
+            }
+            if let Some(w) = &profile.warning {
+                tracing::warn!("{}", w);
+            }
+            tracing::info!("profile={:?}", profile);
             serve_http(&listen)?;
         }
     }

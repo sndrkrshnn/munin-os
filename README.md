@@ -77,6 +77,11 @@ TIER=Tier1Mobile bash distro/scripts/model-manager.sh
 TIER=auto bash distro/scripts/model-manager.sh
 ```
 
+Runtime model fallback:
+- MuninOS tries selected tier model first.
+- If missing, it falls back to smaller tiers automatically.
+- If no tier model exists, `munin-brain` logs a warning and stays in local-safe mode.
+
 ## Learning docs
 - `docs/OS_BASICS.md`
 - `docs/AGENTIC_ARCHITECTURE.md`
