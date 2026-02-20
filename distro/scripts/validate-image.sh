@@ -2,8 +2,13 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-WORK="$ROOT/workdir/rootfs"
 BUILD="$ROOT/build"
+WORK="$ROOT/workdir/rootfs"
+
+# Use effective rootfs path produced by build-rootfs (important on macOS Docker fallback)
+if [[ -f "$BUILD/rootfs.path" ]]; then
+  WORK="$(cat "$BUILD/rootfs.path")"
+fi
 
 fail() { echo "[validate] ERROR: $*" >&2; exit 1; }
 pass() { echo "[validate] OK: $*"; }

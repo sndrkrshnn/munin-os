@@ -44,6 +44,10 @@ fi
 
 $SUDO mkdir -p "$WORK" "$BUILD/live"
 
+# Persist effective rootfs path for validators/next stages
+$SUDO mkdir -p "$BUILD"
+echo "$WORK" | $SUDO tee "$BUILD/rootfs.path" >/dev/null
+
 if [[ ! -f "$WORK/.debootstrap_done" ]]; then
   $SUDO debootstrap --arch=amd64 bookworm "$WORK" http://deb.debian.org/debian
   $SUDO touch "$WORK/.debootstrap_done"
