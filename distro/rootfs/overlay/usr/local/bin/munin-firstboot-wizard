@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MARKER=/etc/muninos/firstboot.done
+CONF=/etc/muninos/setup.env
+mkdir -p /etc/muninos
+
+[[ -f "$MARKER" ]] && exit 0
+
+# Only run interactively on tty; if headless, set sane defaults.
+if [[ -t 0 ]]; then
+  echo "=== MuninOS First Boot Wizard ==="
+  read -rp "Hostname [muninos]: " HOSTNAME
+  HOSTNAME=${HOSTNAME:-muninos}
+  read -rp "Timezone [Asia/Calcutta]: " TZ
+  TZ=${TZ:-Asia/Calcutta}
+else
+  HOSTNAME=muninos
+  TZ=UTC
+fi
+
+echo "$HOSTNAME" > /etc/hostname
+ln -sf "/usr/share/zoneinfo/$TZ" /etc/localtime || true
+
+auth_note="Set API key later: /etc/default/munin-sts"
+cat > "$CONF" <<EOF
+HOSTNAME=$HOSTNAME
+TZ=$TZ
+NOTE=$auth_note
+EOF
+
+touch "$MARKER"
+echo "[MuninOS] First boot configured (hostname=$HOSTNAME tz=$TZ)"

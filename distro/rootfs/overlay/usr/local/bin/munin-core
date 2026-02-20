@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
-while true; do
-  echo "[munin-core] running";
-  sleep 30;
+
+BIN_CANDIDATES=(
+  "/opt/muninos/bin/munin-core"
+  "/usr/local/bin/blueprint-core"
+  "/usr/local/bin/muninos-core"
+)
+
+for bin in "${BIN_CANDIDATES[@]}"; do
+  if [[ -x "$bin" ]]; then
+    exec "$bin" start --sts
+  fi
 done
+
+echo "[munin-core] no core binary found. looked in: ${BIN_CANDIDATES[*]}" >&2
+exit 1

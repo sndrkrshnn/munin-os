@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
-while true; do
-  echo "[munin-sts] running";
-  sleep 30;
+
+BIN_CANDIDATES=(
+  "/opt/muninos/bin/munin-sts"
+  "/usr/local/bin/blueprint-sts"
+  "/usr/local/bin/muninos-sts"
+)
+
+for bin in "${BIN_CANDIDATES[@]}"; do
+  if [[ -x "$bin" ]]; then
+    exec "$bin" start
+  fi
 done
+
+echo "[munin-sts] no sts binary found. looked in: ${BIN_CANDIDATES[*]}" >&2
+exit 1

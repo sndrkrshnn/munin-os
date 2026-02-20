@@ -19,8 +19,21 @@ sudo chroot "$WORK" bash -lc "apt-get update && DEBIAN_FRONTEND=noninteractive a
 
 # overlay + firstboot/services
 sudo rsync -a "$OVERLAY/" "$WORK/"
-sudo chmod +x "$WORK/usr/local/bin/munin-firstboot" || true
-sudo chmod +x "$WORK/usr/local/bin/munin-core" "$WORK/usr/local/bin/munin-sts" "$WORK/usr/local/bin/munin-ui" || true
+
+# ship UI assets into OS image
+sudo mkdir -p "$WORK/opt/muninos/ui"
+sudo rsync -a "$ROOT/blueprint-ui/" "$WORK/opt/muninos/ui/" || true
+
+# ensure executable scripts
+sudo chmod +x \
+  "$WORK/usr/local/bin/munin-firstboot" \
+  "$WORK/usr/local/bin/munin-firstboot-wizard" \
+  "$WORK/usr/local/bin/munin-core" \
+  "$WORK/usr/local/bin/munin-sts" \
+  "$WORK/usr/local/bin/munin-ui" || true
+
+# enable systemd units in image root
+sudo chroot "$WORK" bash -lc 'systemctl enable munin-firstboot.service munin-core.service munin-sts.service munin-ui.service || true'
 
 # regenerate initramfs for installed kernel
 sudo chroot "$WORK" bash -lc 'KVER=$(ls /lib/modules | sort -V | tail -n1); update-initramfs -c -k "$KVER"'

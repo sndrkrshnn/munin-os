@@ -27,4 +27,14 @@ make kernel
 make rootfs
 make iso
 ```
-If `build/kernel/bzImage` exists, ISO build prefers it as kernel payload.
+If `build/kernel/bzImage` exists, ISO build prefers it.
+
+## First boot behavior
+- `munin-firstboot.service` runs `munin-firstboot-wizard` once
+- captures hostname/timezone and writes `/etc/muninos/setup.env`
+- enables `munin-core`, `munin-sts`, `munin-ui`
+
+## STS key at runtime
+Set in image/host:
+- `/etc/default/munin-sts`
+- `QWEN_API_KEY=...`

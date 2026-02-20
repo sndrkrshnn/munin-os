@@ -1,0 +1,12 @@
+[Unit]
+Description=MuninOS First Boot Wizard
+ConditionPathExists=!/etc/muninos/firstboot.done
+Before=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/munin-firstboot-wizard
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

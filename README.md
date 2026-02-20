@@ -1,13 +1,13 @@
 # MuninOS
 
-MuninOS is a **standalone Linux distribution** project (not an app running inside another OS).
+MuninOS is a **standalone Linux distribution** project (not an app inside another OS).
 
 ## Core direction
-- Own distro structure (`distro/`)
+- Own distro tree (`distro/`)
 - Custom kernel config (`distro/kernel/configs/munin_defconfig`)
-- Rootfs build pipeline (Debian base via `debootstrap`)
-- Bootable ISO pipeline (GRUB + `grub-mkrescue`)
-- First-party OS services (`munin-core`, `munin-sts`, `munin-ui`)
+- Rootfs pipeline (`debootstrap`) + bootable ISO pipeline (`grub-mkrescue`)
+- Native services on boot: `munin-core`, `munin-sts`, `munin-ui`
+- First-boot wizard (`munin-firstboot-wizard`) for initial host setup
 
 ## Build quickstart (Debian/Ubuntu host)
 ```bash
@@ -27,28 +27,21 @@ Artifacts:
 - `build/live/filesystem.squashfs`
 - `build/muninos-dev.iso`
 
-### Custom kernel integration
-If `build/kernel/bzImage` exists (from `make kernel`), ISO build will prefer it automatically as `/live/vmlinuz`.
+## Custom kernel path
+If `build/kernel/bzImage` exists (from `make kernel`), ISO build automatically prefers it.
 
-## Repo structure
-```text
-.
-├── distro/
-│   ├── kernel/configs/munin_defconfig
-│   ├── rootfs/
-│   │   ├── overlay/
-│   │   └── packages/base.txt
-│   ├── iso/grub/grub.cfg
-│   └── scripts/
-│       ├── build-kernel.sh
-│       ├── build-rootfs.sh
-│       ├── build-iso.sh
-│       └── run-qemu.sh
-├── blueprint-core/
-├── blueprint-sts/
-├── blueprint-ui/
-└── Makefile
-```
+## Native service scaffolding (in image)
+- `/etc/systemd/system/munin-core.service`
+- `/etc/systemd/system/munin-sts.service`
+- `/etc/systemd/system/munin-ui.service`
+- `/etc/systemd/system/munin-firstboot.service`
+
+Wrappers:
+- `/usr/local/bin/munin-core`
+- `/usr/local/bin/munin-sts`
+- `/usr/local/bin/munin-ui`
+- `/usr/local/bin/munin-firstboot-wizard`
 
 ## Status
-This push focuses on **distro core bring-up**: boot artifacts, ISO generation, and VM boot testing path.
+This push focuses on boot-first distro bring-up and native service wiring.
+Next: replace wrapper placeholders with compiled Munin binaries in `/opt/muninos/bin` by default image build.
