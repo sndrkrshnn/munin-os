@@ -2,4 +2,4 @@ NAME="MuninOS"
 VERSION="0.1-dev"
 ID=muninos
 PRETTY_NAME="MuninOS 0.1-dev"
-HOME_URL="https://github.com/sndrkrshnn/blueprintos"
+HOME_URL="https://github.com/sndrkrshnn/munin-os"
