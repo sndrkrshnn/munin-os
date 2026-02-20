@@ -57,6 +57,15 @@ Wrappers:
 - `munin-core api` exposes transcript + approval endpoints
 - `munin-ui` polls pending approvals and can approve/deny tool calls
 - risky actions are marked for confirmation unless `--auto-approve` is used
+- local-only mode: no external model API key required for core decisioning
+
+### Default on-device model presets (llama.cpp)
+- Tier0 (tiny): `munin-tiny-1b-instruct-q4.gguf`
+- Tier1 (mobile): `munin-mobile-3b-instruct-q4.gguf`
+- Tier2 (balanced): `munin-balanced-7b-instruct-q4.gguf`
+- Tier3 (performance): `munin-performance-13b-instruct-q5.gguf`
+
+Expected model directory: `/opt/muninos/models/`
 
 ## Learning docs
 - `docs/OS_BASICS.md`

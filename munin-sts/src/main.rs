@@ -1,23 +1,16 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::{Parser, Subcommand};
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
 use tokio::time::{sleep, Duration};
-use tracing::{error, info};
+use tracing::info;
 use uuid::Uuid;
 
 #[derive(Parser, Debug)]
 #[command(name = "munin-sts")]
-#[command(author, version, about = "MuninOS Speech-to-Speech service")]
+#[command(author, version, about = "MuninOS local STS orchestration service")]
 struct Args {
     #[command(subcommand)]
     command: Commands,
-
-    #[arg(long, default_value = "https://api.qwen.ai/v1/omni/chat")]
-    api_endpoint: String,
-
-    #[arg(long, env = "QWEN_API_KEY")]
-    api_key: Option<String>,
 
     #[arg(long, default_value_t = 16000)]
     sample_rate: u32,
@@ -31,9 +24,13 @@ struct Args {
     #[arg(long, default_value_t = true)]
     wake_word: bool,
 
-    /// Munin core API endpoint
+    /// Munin core API endpoint (local)
     #[arg(long, default_value = "http://127.0.0.1:8787")]
     core_endpoint: String,
+
+    /// Munin brain endpoint (local)
+    #[arg(long, default_value = "http://127.0.0.1:8790")]
+    brain_endpoint: String,
 }
 
 #[derive(Subcommand, Debug)]
@@ -43,90 +40,61 @@ enum Commands {
     Interact { audio_file: String },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct QwenRequest {
-    model: String,
-    mode: String,
-}
-
 struct STSService {
     session_id: String,
-    api_endpoint: String,
-    api_key: String,
     core_endpoint: String,
+    brain_endpoint: String,
     client: Client,
 }
 
 impl STSService {
-    fn new(args: &Args) -> Result<Self> {
-        let api_key = args
-            .api_key
-            .clone()
-            .or_else(|| std::env::var("QWEN_API_KEY").ok())
-            .context("QWEN_API_KEY is required")?;
-
-        Ok(Self {
+    fn new(args: &Args) -> Self {
+        Self {
             session_id: Uuid::new_v4().to_string(),
-            api_endpoint: args.api_endpoint.clone(),
-            api_key,
             core_endpoint: args.core_endpoint.clone(),
+            brain_endpoint: args.brain_endpoint.clone(),
             client: Client::new(),
-        })
+        }
     }
 
     async fn run(&self) -> Result<()> {
         info!("Starting MuninOS STS session: {}", self.session_id);
-        info!("Pipeline: audio-in -> qwen3-omni -> audio-out -> tool-calling core");
+        info!("Mode: local-only (no external API keys required)");
 
         let test_text = std::env::var("MUNIN_STS_TEST_TEXT").ok();
 
         loop {
             if let Some(text) = &test_text {
-                let _ = self.send_transcript(text).await;
+                let _ = self.route_transcript(text).await;
             }
             sleep(Duration::from_secs(3)).await;
             info!("STS service alive");
         }
     }
 
-    async fn send_transcript(&self, transcript: &str) -> Result<()> {
-        let payload = serde_json::json!({
+    async fn route_transcript(&self, transcript: &str) -> Result<()> {
+        let decide_url = format!("{}/v1/decide", self.brain_endpoint.trim_end_matches('/'));
+        let decide_payload = serde_json::json!({
+            "transcript": transcript,
+            "locale": "en-US"
+        });
+
+        let decide_resp = self.client.post(&decide_url).json(&decide_payload).send().await?;
+        let decide_json: serde_json::Value = decide_resp.json().await.unwrap_or_default();
+        info!("brain decision: {}", decide_json);
+
+        let core_url = format!("{}/v1/transcript", self.core_endpoint.trim_end_matches('/'));
+        let core_payload = serde_json::json!({
             "session_id": self.session_id,
             "locale": "en-US",
             "transcript": transcript
         });
 
-        let url = format!("{}/v1/transcript", self.core_endpoint.trim_end_matches('/'));
-        let resp = self.client.post(&url).json(&payload).send().await?;
-        let text = resp.text().await.unwrap_or_default();
-        info!("core transcript response: {}", text);
+        let core_resp = self.client.post(&core_url).json(&core_payload).send().await?;
+        let core_text = core_resp.text().await.unwrap_or_default();
+        info!("core transcript response: {}", core_text);
+
         Ok(())
-    }
-
-    async fn ping_provider(&self) -> Result<()> {
-        let payload = QwenRequest {
-            model: "qwen3-omni".to_string(),
-            mode: "speech_to_speech".to_string(),
-        };
-
-        let resp = self
-            .client
-            .post(&self.api_endpoint)
-            .bearer_auth(&self.api_key)
-            .json(&payload)
-            .send()
-            .await;
-
-        match resp {
-            Ok(r) => {
-                info!("Provider reachable: HTTP {}", r.status());
-                Ok(())
-            }
-            Err(e) => {
-                error!("Provider ping failed: {}", e);
-                Err(e.into())
-            }
-        }
     }
 }
 
@@ -137,13 +105,11 @@ async fn main() -> Result<()> {
 
     match args.command {
         Commands::Start => {
-            let service = STSService::new(&args)?;
-            // best-effort connectivity check
-            let _ = service.ping_provider().await;
+            let service = STSService::new(&args);
             service.run().await?;
         }
         Commands::TestAudio => {
-            info!("Audio test stub (TODO): mic/speaker verification");
+            info!("Audio test stub (TODO): direct driver loop + VAD");
         }
         Commands::Interact { audio_file } => {
             info!("Interact stub (TODO): processing file {}", audio_file);

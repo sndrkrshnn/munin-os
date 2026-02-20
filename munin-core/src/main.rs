@@ -27,9 +27,9 @@ struct Args {
     #[arg(long, default_value_t = false)]
     auto_approve: bool,
 
-    /// Qwen3 Omni API endpoint
-    #[arg(long, default_value = "https://api.qwen.ai/v1/omni")]
-    api_endpoint: String,
+    /// Local brain endpoint
+    #[arg(long, default_value = "http://127.0.0.1:8790")]
+    brain_endpoint: String,
 }
 
 #[derive(Subcommand, Debug)]
@@ -63,7 +63,7 @@ async fn main() -> Result<()> {
         Commands::Start => {
             tracing::info!("Starting MuninOS Core with sts={}", args.sts);
             if args.sts {
-                bus.start_voice_mode(args.api_endpoint).await?;
+                bus.start_voice_mode(args.brain_endpoint).await?;
             } else {
                 bus.run().await?;
             }

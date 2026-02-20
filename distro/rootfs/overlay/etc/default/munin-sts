@@ -1,4 +1,6 @@
-# MuninOS STS environment overrides
-# Put your key here at install/runtime:
-# QWEN_API_KEY=...
-QWEN_API_KEY=
+# MuninOS STS local runtime configuration
+# No external API key required.
+CORE_ENDPOINT=http://127.0.0.1:8787
+BRAIN_ENDPOINT=http://127.0.0.1:8790
+WAKE_PHRASE=hey munin
+LOCALE=en-US

@@ -2,7 +2,6 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::collections::HashSet;
 use std::io::Read;
 use sysinfo::System;
 use tiny_http::{Header, Method, Response, Server, StatusCode};
@@ -39,6 +38,15 @@ enum ModelTier {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+struct ModelPreset {
+    tier: ModelTier,
+    model_id: String,
+    model_path: String,
+    quant: String,
+    context: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct RuntimeProfile {
     arch: String,
     cpus: usize,
@@ -46,6 +54,7 @@ struct RuntimeProfile {
     gpu_hint: bool,
     tier: ModelTier,
     backend: String,
+    selected_model: ModelPreset,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,6 +71,39 @@ struct DecideIn {
     locale: Option<String>,
 }
 
+fn preset_for_tier(tier: &ModelTier) -> ModelPreset {
+    match tier {
+        ModelTier::Tier0Tiny => ModelPreset {
+            tier: ModelTier::Tier0Tiny,
+            model_id: "munin-tiny-1b-instruct".into(),
+            model_path: "/opt/muninos/models/munin-tiny-1b-instruct-q4.gguf".into(),
+            quant: "Q4_K_M".into(),
+            context: 2048,
+        },
+        ModelTier::Tier1Mobile => ModelPreset {
+            tier: ModelTier::Tier1Mobile,
+            model_id: "munin-mobile-3b-instruct".into(),
+            model_path: "/opt/muninos/models/munin-mobile-3b-instruct-q4.gguf".into(),
+            quant: "Q4_K_M".into(),
+            context: 4096,
+        },
+        ModelTier::Tier2Balanced => ModelPreset {
+            tier: ModelTier::Tier2Balanced,
+            model_id: "munin-balanced-7b-instruct".into(),
+            model_path: "/opt/muninos/models/munin-balanced-7b-instruct-q4.gguf".into(),
+            quant: "Q4_K_M".into(),
+            context: 8192,
+        },
+        ModelTier::Tier3Performance => ModelPreset {
+            tier: ModelTier::Tier3Performance,
+            model_id: "munin-performance-13b-instruct".into(),
+            model_path: "/opt/muninos/models/munin-performance-13b-instruct-q5.gguf".into(),
+            quant: "Q5_K_M".into(),
+            context: 8192,
+        },
+    }
+}
+
 fn detect_profile() -> RuntimeProfile {
     let mut sys = System::new_all();
     sys.refresh_all();
@@ -69,8 +111,6 @@ fn detect_profile() -> RuntimeProfile {
     let ram_gb = (sys.total_memory() / 1024 / 1024) as u64;
     let cpus = num_cpus::get();
     let arch = std::env::consts::ARCH.to_string();
-
-    // heuristic GPU hint: allow manual override
     let gpu_hint = std::env::var("MUNIN_GPU").ok().as_deref() == Some("1");
 
     let tier = if ram_gb <= 4 || cpus <= 2 {
@@ -83,16 +123,14 @@ fn detect_profile() -> RuntimeProfile {
         ModelTier::Tier3Performance
     };
 
-    // informed decision: prefer llama.cpp for optimized local inference path
-    let backend = "llama.cpp".to_string();
-
     RuntimeProfile {
         arch,
         cpus,
         ram_gb,
         gpu_hint,
+        selected_model: preset_for_tier(&tier),
         tier,
-        backend,
+        backend: "llama.cpp".into(),
     }
 }
 
@@ -157,15 +195,16 @@ fn decide(transcript: &str) -> Decision {
 fn serve_http(listen: &str) -> Result<()> {
     let server = Server::http(listen)?;
     tracing::info!("munin-brain api listening on http://{}", listen);
+
     for mut req in server.incoming_requests() {
         let path = req.url().to_string();
         let method = req.method().clone();
 
         let mut response = match (method, path.as_str()) {
-            (Method::Get, "/health") => {
-                Response::from_string(json!({"ok": true, "profile": detect_profile()}).to_string())
-                    .with_status_code(StatusCode(200))
-            }
+            (Method::Get, "/health") => Response::from_string(
+                json!({"ok": true, "profile": detect_profile(), "mode": "local-only"}).to_string(),
+            )
+            .with_status_code(StatusCode(200)),
             (Method::Post, "/v1/decide") => {
                 let mut body = String::new();
                 let _ = req.as_reader().read_to_string(&mut body);
@@ -198,12 +237,8 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     match args.command {
-        Commands::Profile => {
-            println!("{}", serde_json::to_string_pretty(&detect_profile())?);
-        }
-        Commands::Decide { transcript } => {
-            println!("{}", serde_json::to_string_pretty(&decide(&transcript))?);
-        }
+        Commands::Profile => println!("{}", serde_json::to_string_pretty(&detect_profile())?),
+        Commands::Decide { transcript } => println!("{}", serde_json::to_string_pretty(&decide(&transcript))?),
         Commands::Serve { listen } => {
             tracing::info!("profile={:?}", detect_profile());
             serve_http(&listen)?;

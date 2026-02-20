@@ -6,9 +6,12 @@ BIN_CANDIDATES=(
   "/usr/local/bin/muninos-sts"
 )
 
+CORE_ENDPOINT="${CORE_ENDPOINT:-http://127.0.0.1:8787}"
+BRAIN_ENDPOINT="${BRAIN_ENDPOINT:-http://127.0.0.1:8790}"
+
 for bin in "${BIN_CANDIDATES[@]}"; do
   if [[ -x "$bin" ]]; then
-    exec "$bin" start
+    exec "$bin" start --core-endpoint "$CORE_ENDPOINT" --brain-endpoint "$BRAIN_ENDPOINT"
   fi
 done
 

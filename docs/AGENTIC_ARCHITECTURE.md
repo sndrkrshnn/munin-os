@@ -1,4 +1,4 @@
-# MuninOS Agentic Architecture (Phase 1)
+# MuninOS Agentic Architecture (Phase 2)
 
 ## Goal
 Run a speech-first AI "brain" at OS level with tool-calling and agentic loops.
@@ -17,7 +17,14 @@ Responsibilities:
 - detect hardware profile (CPU/RAM/GPU hint)
 - choose model tier automatically
 - default optimized backend strategy: `llama.cpp`
+- use local model presets from `/opt/muninos/models` (no API key)
 - produce decisions and tool plans for file/system/network domains
+
+Default tiers:
+- Tier0 -> 1B q4
+- Tier1 -> 3B q4
+- Tier2 -> 7B q4
+- Tier3 -> 13B q5
 
 ## 3) munin-core (policy + execution runtime)
 Responsibilities:

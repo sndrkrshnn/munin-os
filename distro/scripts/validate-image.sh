@@ -36,8 +36,9 @@ pass "found UI assets"
 pass "found STS default env"
 
 # Build artifacts (if validate called post-iso)
-if [[ -f "$BUILD/muninos-dev.iso" ]]; then
-  pass "ISO present: $BUILD/muninos-dev.iso"
+ARCH="${ARCH:-$(cat "$BUILD/arch" 2>/dev/null || echo arm64)}"
+if [[ -f "$BUILD/muninos-${ARCH}-dev.iso" ]]; then
+  pass "ISO present: $BUILD/muninos-${ARCH}-dev.iso"
 fi
 
 echo "[validate] All checks passed."

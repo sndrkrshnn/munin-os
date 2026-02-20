@@ -81,7 +81,10 @@ TIMEOUT_SECS=180 make smoke
 - captures hostname/timezone and writes `/etc/muninos/setup.env`
 - enables `munin-core`, `munin-sts`, `munin-ui`
 
-## STS key at runtime
-Set in image/host:
+## STS runtime config (local-only)
+Set in image/host (optional overrides):
 - `/etc/default/munin-sts`
-- `QWEN_API_KEY=...`
+- `CORE_ENDPOINT=http://127.0.0.1:8787`
+- `BRAIN_ENDPOINT=http://127.0.0.1:8790`
+- `WAKE_PHRASE=hey munin`
+- `LOCALE=en-US`
