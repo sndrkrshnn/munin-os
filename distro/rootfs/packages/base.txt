@@ -14,3 +14,7 @@ wireplumber
 alsa-utils
 python3
 python3-pip
+linux-image-amd64
+initramfs-tools
+live-boot
+busybox
