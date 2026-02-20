@@ -7,31 +7,43 @@ BUILD="$ROOT/build"
 OVERLAY="$ROOT/distro/rootfs/overlay"
 PKGS_FILE="$ROOT/distro/rootfs/packages/base.txt"
 
-sudo mkdir -p "$WORK" "$BUILD/live"
+# Use sudo only when needed/available
+if [[ "$(id -u)" -eq 0 ]]; then
+  SUDO=""
+else
+  if command -v sudo >/dev/null 2>&1; then
+    SUDO="sudo"
+  else
+    echo "[rootfs] ERROR: need root privileges or sudo installed"
+    exit 1
+  fi
+fi
+
+$SUDO mkdir -p "$WORK" "$BUILD/live"
 
 if [[ ! -f "$WORK/.debootstrap_done" ]]; then
-  sudo debootstrap --arch=amd64 bookworm "$WORK" http://deb.debian.org/debian
-  sudo touch "$WORK/.debootstrap_done"
+  $SUDO debootstrap --arch=amd64 bookworm "$WORK" http://deb.debian.org/debian
+  $SUDO touch "$WORK/.debootstrap_done"
 fi
 
 PKGS=$(tr '\n' ' ' < "$PKGS_FILE")
-sudo chroot "$WORK" bash -lc "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $PKGS"
+$SUDO chroot "$WORK" bash -lc "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y $PKGS"
 
 # overlay + firstboot/services
-sudo rsync -a "$OVERLAY/" "$WORK/"
+$SUDO rsync -a "$OVERLAY/" "$WORK/"
 
 # ship UI assets into OS image
-sudo mkdir -p "$WORK/opt/muninos/ui"
-sudo rsync -a "$ROOT/munin-ui/" "$WORK/opt/muninos/ui/" || true
+$SUDO mkdir -p "$WORK/opt/muninos/ui"
+$SUDO rsync -a "$ROOT/munin-ui/" "$WORK/opt/muninos/ui/" || true
 
 # ship compiled Munin binaries when available
 if [[ -d "$ROOT/build/munin-bin" ]]; then
-  sudo mkdir -p "$WORK/opt/muninos/bin"
-  sudo rsync -a "$ROOT/build/munin-bin/" "$WORK/opt/muninos/bin/"
+  $SUDO mkdir -p "$WORK/opt/muninos/bin"
+  $SUDO rsync -a "$ROOT/build/munin-bin/" "$WORK/opt/muninos/bin/"
 fi
 
 # ensure executable scripts
-sudo chmod +x \
+$SUDO chmod +x \
   "$WORK/usr/local/bin/munin-firstboot" \
   "$WORK/usr/local/bin/munin-firstboot-wizard" \
   "$WORK/usr/local/bin/munin-core" \
@@ -39,25 +51,25 @@ sudo chmod +x \
   "$WORK/usr/local/bin/munin-ui" || true
 
 # enable systemd units in image root
-sudo chroot "$WORK" bash -lc 'systemctl enable munin-firstboot.service munin-core.service munin-sts.service munin-ui.service || true'
+$SUDO chroot "$WORK" bash -lc 'systemctl enable munin-firstboot.service munin-core.service munin-sts.service munin-ui.service || true'
 
 # regenerate initramfs for installed kernel
-sudo chroot "$WORK" bash -lc 'KVER=$(ls /lib/modules | sort -V | tail -n1); update-initramfs -c -k "$KVER"'
+$SUDO chroot "$WORK" bash -lc 'KVER=$(ls /lib/modules | sort -V | tail -n1); update-initramfs -c -k "$KVER"'
 
 # export live boot assets from rootfs kernel by default
-KERNEL_PATH=$(sudo chroot "$WORK" bash -lc 'ls /boot/vmlinuz-* | sort -V | tail -n1')
-INITRD_PATH=$(sudo chroot "$WORK" bash -lc 'ls /boot/initrd.img-* | sort -V | tail -n1')
+KERNEL_PATH=$($SUDO chroot "$WORK" bash -lc 'ls /boot/vmlinuz-* | sort -V | tail -n1')
+INITRD_PATH=$($SUDO chroot "$WORK" bash -lc 'ls /boot/initrd.img-* | sort -V | tail -n1')
 
-sudo cp "$WORK$KERNEL_PATH" "$BUILD/live/vmlinuz"
-sudo cp "$WORK$INITRD_PATH" "$BUILD/live/initrd.img"
+$SUDO cp "$WORK$KERNEL_PATH" "$BUILD/live/vmlinuz"
+$SUDO cp "$WORK$INITRD_PATH" "$BUILD/live/initrd.img"
 
 # if custom kernel exists, export and prefer later in ISO stage
 if [[ -f "$BUILD/kernel/bzImage" ]]; then
-  sudo cp "$BUILD/kernel/bzImage" "$BUILD/live/vmlinuz-custom"
+  $SUDO cp "$BUILD/kernel/bzImage" "$BUILD/live/vmlinuz-custom"
 fi
 
 # live rootfs
-sudo mksquashfs "$WORK" "$BUILD/live/filesystem.squashfs" -noappend -comp xz
+$SUDO mksquashfs "$WORK" "$BUILD/live/filesystem.squashfs" -noappend -comp xz
 
 echo "[rootfs] Done"
 echo "  - $BUILD/live/vmlinuz"
