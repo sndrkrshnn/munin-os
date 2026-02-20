@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[BlueprintOS] first boot initialization"
+# placeholder for service enablement:
+# systemctl enable blueprint-core.service blueprint-sts.service || true
+
+echo "[BlueprintOS] first boot complete"

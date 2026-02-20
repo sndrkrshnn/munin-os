@@ -1,138 +1,72 @@
 # BlueprintOS
 
-**BlueprintOS** — An agentic operating system with voice-first and visual UI, powered by **Qwen3 Omni**. Built as an intelligent layer on top of Linux.
+BlueprintOS is now a **Linux distribution project** (not just an app layer).
 
-## 🎯 Vision
+## What changed
+- Own distro structure (`distro/`)
+- Custom Linux kernel config (`distro/kernel/configs/blueprint_defconfig`)
+- Root filesystem build pipeline (Debian base via `debootstrap`)
+- Bootable ISO pipeline (GRUB + xorriso)
+- First-party installer/bootstrap scripts
 
-BlueprintOS reimagines the OS experience:
-- **No traditional GUI** — Interact through voice and visuals only
-- **Agentic by default** — Every task is handled by AI agents
-- **Qwen3 Omni powered** — Multimodal understanding (voice, text, vision)
-- **Linux foundation** — Runs on any Linux distro or bare metal
+## Goal
+Build a bootable, voice-first, agentic Linux distro with:
+- Custom kernel tuning for low-latency audio + AI workloads
+- Native speech-to-speech runtime
+- Visual shell/dashboard
+- Deterministic image build process
 
-## 🏗️ Architecture
+## Current repo layout
 
+```text
+blueprintos/
+├── distro/
+│   ├── kernel/
+│   │   ├── configs/blueprint_defconfig
+│   │   └── patches/
+│   ├── rootfs/
+│   │   ├── overlay/
+│   │   │   ├── etc/blueprintos-release
+│   │   │   └── usr/local/bin/blueprint-firstboot
+│   │   └── packages/base.txt
+│   ├── iso/
+│   │   └── grub/grub.cfg
+│   └── scripts/
+│       ├── build-kernel.sh
+│       ├── build-rootfs.sh
+│       └── build-iso.sh
+├── blueprint-core/
+├── blueprint-sts/
+├── blueprint-ui/
+└── Makefile
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    BlueprintOS Layer                        │
-├─────────────────────────────────────────────────────────────┤
-│                    ┌─────────────────────┐                  │
-│                    │   Speech-to-Speech  │                  │
-│                    │   (Qwen3 Omni)      │                  │
-│                    │   Real-time Audio   │                  │
-│                    └──────────┬──────────┘                  │
-│                               │                             │
-│              ┌────────────────┼────────────────┐            │
-│              ▼                ▼                ▼            │
-│     ┌─────────────┐   ┌─────────────┐   ┌─────────────┐    │
-│     │  Audio In   │   │ Agent Bus   │   │  Visual UI  │    │
-│     │ (Mic Stream)│   │ (Message)   │   │ (Canvas)    │    │
-│     └─────────────┘   └─────────────┘   └─────────────┘    │
-│                                                          │
-├──────────────────────────┬───────────────────────────────┤
-│                          ▼                                │
-│             ┌─────────────────────────────┐               │
-│             │    Linux Base (Any Distro)  │               │
-│             │   + Audio Drivers + GPU     │               │
-│             └─────────────────────────────┘               │
-└─────────────────────────────────────────────────────────────┘
-```
 
-## 🎤 Speech-to-Speech UX
+## Core setup (today)
 
-- **Single streaming pipeline**: Audio in → Qwen3 Omni → Audio out
-- **No STT/TTS separation**: One model handles both directions
-- **Ultra-low latency**: Chunked audio streaming for real-time feel
-- **Voice preservation**: Speaker tone and emotion maintained
-- **Wake word**: "Hey Blueprint" triggers listening mode
-- **Visual feedback**: Canvas shows agent thought process, results, animations
-
-## 🧠 Qwen3 Omni - Speech-to-Speech
-
-Qwen3 Omni natively supports real-time speech-to-speech:
-- **Multimodal streaming**: Voice + text + images in/out
-- **Single API call**: No separate transcription/synthesis
-- **Native audio output**: Direct PCM/audio stream response
-- **Context awareness**: Maintains conversation history
-
-## 📦 Core Components
-
-| Component | Language | Description |
-|-----------|----------|-------------|
-| `blueprint-core` | Rust | Agent orchestration, message bus |
-| `blueprint-sts` | Rust/Python | Speech-to-Speech streaming with Qwen3 Omni |
-| `blueprint-ui` | HTML/JS/Canvas | Visual output, animations, status display |
-| `blueprint-cli` | Rust | Terminal fallback for developers |
-| `blueprint-installer` | Shell | Install BlueprintOS layer on Linux |
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Linux (Ubuntu 22.04+ or similar)
-- Python 3.10+
-- Rust 1.75+
-- Microphone & speakers
-
-### Quick Install
-
+### 1) Install build dependencies (Ubuntu/Debian host)
 ```bash
-# Clone the repo
-git clone https://github.com/sndrkrshnn/blueprintos.git
-cd blueprintos
-
-# Run installer
-./install.sh
-
-# Start BlueprintOS
-blueprintos start
+sudo apt update
+sudo apt install -y build-essential git bc bison flex libssl-dev libelf-dev \
+  debootstrap squashfs-tools xorriso grub-pc-bin grub-efi-amd64-bin mtools \
+  rsync cpio dosfstools
 ```
 
-### Interacting
-
-```
-User: "Hey Blueprint, what's my system status?"
-BlueprintOS: "Your system is healthy. 8GB RAM used of 16GB..."
-[Visual: Shows RAM usage chart]
-
-User: "Find all PDF files modified this week"
-BlueprintOS: "Searching..."
-[Visual: Displays file results in a grid]
-```
-
-## 🎯 Roadmap
-
-| Phase | Goal | Deliverables |
-|-------|------|--------------|
-| **1** | Speech-to-Speech foundation | Wake word, audio streaming, Qwen3 Omni STS |
-| **2** | Real-time integration | Chunked audio streaming, low-latency pipeline |
-| **3** | Visual layer | Canvas-based UI, animations, status display |
-| **4** | Agent ecosystem | Task agents (files, system, network, etc.) |
-| **5** | Distribution | Installer, base images, documentation |
-
-## 🔧 Development
-
+### 2) Build kernel + rootfs + ISO
 ```bash
-# Setup development environment
-make setup
-
-# Run core agent (Rust)
-cd blueprint-core && cargo run -- --sts
-
-# Run Speech-to-Speech service
-cd blueprint-sts && cargo run -- --api-key YOUR_KEY
-
-# Run visual UI (browser)
-cd blueprint-ui && python -m http.server 8080
+make kernel
+make rootfs
+make iso
 ```
 
-## 📄 License
+Output artifacts:
+- `build/kernel/bzImage`
+- `build/rootfs.squashfs`
+- `build/blueprintos-dev.iso`
 
-MIT License — see LICENSE file.
+## Notes
+- This is **core distro scaffolding** for day-1.
+- Kernel and ISO scripts are production-oriented stubs and can now be iterated.
+- Next milestone: boot test in QEMU + firstboot service wiring + STS daemon in init system.
 
-## 🤝 Contributing
-
-This is early-stage. Ideas, PRs, and feedback welcome!
-
----
-
-**BlueprintOS** — An OS that listens, sees, and acts.
+## License
+MIT

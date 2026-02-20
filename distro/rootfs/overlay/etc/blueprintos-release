@@ -1,0 +1,5 @@
+NAME="BlueprintOS"
+VERSION="0.1-dev"
+ID=blueprintos
+PRETTY_NAME="BlueprintOS 0.1-dev"
+HOME_URL="https://github.com/sndrkrshnn/blueprintos"

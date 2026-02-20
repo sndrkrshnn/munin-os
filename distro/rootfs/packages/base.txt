@@ -1,0 +1,16 @@
+systemd
+sudo
+bash
+coreutils
+iproute2
+network-manager
+ca-certificates
+curl
+wget
+openssh-client
+pulseaudio
+pipewire
+wireplumber
+alsa-utils
+python3
+python3-pip
