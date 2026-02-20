@@ -1,0 +1,16 @@
+[Unit]
+Description=MuninOS Low-Latency Audio Runtime
+After=sound.target munin-brain.service
+Wants=munin-brain.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/munin-audio
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

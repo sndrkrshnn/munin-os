@@ -1,0 +1,16 @@
+[Unit]
+Description=MuninOS Adaptive Brain (llama.cpp router)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/munin-brain
+Restart=always
+RestartSec=2
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

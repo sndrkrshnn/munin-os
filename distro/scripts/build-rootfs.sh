@@ -101,10 +101,12 @@ $SUDO chmod +x \
   "$WORK/usr/local/bin/munin-firstboot-wizard" \
   "$WORK/usr/local/bin/munin-core" \
   "$WORK/usr/local/bin/munin-sts" \
-  "$WORK/usr/local/bin/munin-ui" || true
+  "$WORK/usr/local/bin/munin-ui" \
+  "$WORK/usr/local/bin/munin-brain" \
+  "$WORK/usr/local/bin/munin-audio" || true
 
 # enable systemd units in image root
-$SUDO chroot "$WORK" bash -lc 'systemctl enable munin-firstboot.service munin-core.service munin-sts.service munin-ui.service || true'
+$SUDO chroot "$WORK" bash -lc 'systemctl enable munin-firstboot.service munin-core.service munin-sts.service munin-ui.service munin-brain.service munin-audio.service || true'
 
 # regenerate initramfs for installed kernel
 $SUDO chroot "$WORK" bash -lc 'KVER=$(ls /lib/modules | sort -V | tail -n1); update-initramfs -c -k "$KVER"'

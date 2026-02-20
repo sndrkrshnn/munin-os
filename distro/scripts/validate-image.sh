@@ -16,13 +16,13 @@ pass() { echo "[validate] OK: $*"; }
 [[ -d "$WORK" ]] || fail "rootfs not found at $WORK (run: make rootfs)"
 
 # Required runtime binaries in image
-for b in /opt/muninos/bin/munin-core /opt/muninos/bin/munin-sts /opt/muninos/bin/munin-ui; do
+for b in /opt/muninos/bin/munin-core /opt/muninos/bin/munin-sts /opt/muninos/bin/munin-ui /opt/muninos/bin/munin-brain /opt/muninos/bin/munin-audio; do
   [[ -x "$WORK$b" ]] || fail "missing executable $b in rootfs"
   pass "found $b"
 done
 
 # Required service units
-for s in munin-core.service munin-sts.service munin-ui.service munin-firstboot.service; do
+for s in munin-core.service munin-sts.service munin-ui.service munin-brain.service munin-audio.service munin-firstboot.service; do
   [[ -f "$WORK/etc/systemd/system/$s" ]] || fail "missing unit $s"
   pass "found unit $s"
 done

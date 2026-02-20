@@ -50,10 +50,11 @@ Wrappers:
 - `/usr/local/bin/munin-ui`
 - `/usr/local/bin/munin-firstboot-wizard`
 
-## Agentic runtime (Phase 2)
-- `munin-core` includes tool router + policy engine + agent REPL
+## Agentic runtime (Phase 2 kickoff)
+- `munin-audio`: low-latency audio runtime scaffold (driver-coupled loop path)
+- `munin-brain`: adaptive decision engine (auto model tiering, llama.cpp-first backend strategy)
+- `munin-core`: tool router + policy engine + approval queue
 - `munin-core api` exposes transcript + approval endpoints
-- `munin-sts` can forward transcript events into core API
 - `munin-ui` polls pending approvals and can approve/deny tool calls
 - risky actions are marked for confirmation unless `--auto-approve` is used
 

@@ -4,7 +4,7 @@ set -euo pipefail
 echo "[MuninOS] first boot initialization"
 
 systemctl daemon-reload || true
-systemctl enable munin-firstboot.service munin-core.service munin-sts.service munin-ui.service || true
+systemctl enable munin-firstboot.service munin-core.service munin-sts.service munin-ui.service munin-brain.service munin-audio.service || true
 
 # If already booted once, skip interactive wizard service from next boots.
 if [[ -f /etc/muninos/firstboot.done ]]; then

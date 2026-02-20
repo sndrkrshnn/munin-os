@@ -35,6 +35,8 @@ make ci-smoke
 `make bins` compiles:
 - `munin-core`
 - `munin-sts`
+- `munin-brain`
+- `munin-audio`
 - `munin-ui` (from `munin-ui-service`)
 
 and stages them into `build/munin-bin/` for rootfs embedding.
